@@ -1,9 +1,9 @@
 # TP_TFTP_Henner_Lukas
 
-Pénélope HENNER: penelope.henner@ensea.fr
+Pénélope HENNER: penelope.henner@ensea.fr  
 Maël LUKAS: mael.lukas@ensea.fr
 
-Lab Work Synthesis - TFTP Client 
+# Lab Work Synthesis - TFTP Client 
 
 **Objectives: Develop a TFTP client using RFC sepcifications and Wireshark captures**
 
