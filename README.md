@@ -18,3 +18,8 @@ The purpose of the lab is to create two clients to be used from the commande lin
 
 - One for uploading a file to the server: 
 		$ puttftp host file
+
+
+## Tree
+
+## Files description
