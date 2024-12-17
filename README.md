@@ -22,4 +22,3 @@ The purpose of the lab is to create two clients to be used from the commande lin
 
 ## Tree
 
-## Files description
