@@ -1,22 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#define MAXSIZE 512
-#define RRQ 1
-#define WRQ 2
-#define DAT 3
-#define ACK 4
-#define ERR 5
-#define SERVER_PORT "1069"
-#define ACK_BUFF_SIZE 4
+#include "tftpLabUtils.h"
 
 int main(int argc, char** argv) {
     // check number of arguments
@@ -39,6 +21,7 @@ int main(int argc, char** argv) {
         printf("Unable to reach host: %s\r\n",host);
         exit(EXIT_FAILURE);
     }
+    // opens socket
     int sfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
     if (sfd == -1) {
         perror("socket error");
@@ -46,9 +29,8 @@ int main(int argc, char** argv) {
     }
     printf("created socket\r\n");
 
-    char sendBuffer[MAXSIZE] = {0};
-
     // filling the send buffer
+    char sendBuffer[MAXSIZE] = {0};
     // first two bytes used for operation code, here read request
     sendBuffer[0] = 0;
     sendBuffer[1] = WRQ;
@@ -56,13 +38,13 @@ int main(int argc, char** argv) {
     sprintf(sendBuffer + 2,"%s",file);
     // reserved byte
     sendBuffer[2+strlen(file)] = 0;
-
+    // set mode to octet
     sprintf(sendBuffer + 3 + strlen(file), "octet");
     // reserved byte
     sendBuffer[11 + strlen(file)] = 0;
     int sendBufferSize = 9 + strlen(file);
 
-
+    // sends write request
     ssize_t sentBytes = sendto(sfd,sendBuffer,sendBufferSize,0,res->ai_addr,res->ai_addrlen);
     if (sentBytes == -1) {
         printf("Error while sending request\r\n");
@@ -78,25 +60,30 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    char dataToSend[1024] = {0};
+    // open a local file and put it in a char array to send to server
+    long fileSize = getFileSize(file);
+    char* dataToSend = fileToArray(file,fileSize);
+
     char ackBuffer[ACK_BUFF_SIZE] = {0};
-    int sizeOfDataSent = MAXSIZE;
     int sentDataNb;
-    int nbOfSplits;
+    int nbOfSplits = 1;
 
     do {
-        int sentDataNb = sendto(sfd,dataToSend,(sizeOfDataSent + 4),0,res->ai_addr,res->ai_addrlen);
+        // sends data packet to server
+        int sentDataNb = sendto(sfd,dataToSend,(MAXSIZE + 4),0,res->ai_addr,res->ai_addrlen);
         if (sentDataNb == -1) {
             printf("Error while sending data to server\r\n");
             exit(EXIT_FAILURE);
         }
+        printf("Block number %d sent\r\n",nbOfSplits);
+        // receives server acknowledgement
         int ackRecBytes = recvfrom(sfd,ackBuffer,ACK_BUFF_SIZE,0,res->ai_addr,&(res->ai_addrlen));
         if (ackRecBytes == -1) {
             printf("Error while receiving acknowledgement\r\n");
             exit(EXIT_FAILURE);
         }
         if (ackBuffer[0] == 0 && ackBuffer[1] == ACK) {
-              nbOfSplits = (ackBuffer[2] << 8) | ackBuffer[3];
+              nbOfSplits++;
         }
     } while(sentDataNb == (MAXSIZE + 4));
 }

@@ -1,22 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#define MAXSIZE 512
-#define RRQ 1
-#define WRQ 2
-#define DAT 3
-#define ACK 4
-#define ERR 5
-#define SERVER_PORT "1069"
-#define ACK_BUFF_SIZE 4
+#include "tftpLabUtils.h"
 
 int main(int argc, char** argv) {
     // check number of arguments
@@ -39,6 +21,7 @@ int main(int argc, char** argv) {
         printf("Unable to reach host: %s\r\n",host);
         exit(EXIT_FAILURE);
     }
+    // opens socket
     int sfd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
     if (sfd == -1) {
         perror("socket error");
@@ -46,9 +29,8 @@ int main(int argc, char** argv) {
     }
     printf("created socket\r\n");
 
-    char sendBuffer[MAXSIZE] = {0};
-
     // filling the send buffer
+    char sendBuffer[MAXSIZE] = {0};
     // first two bytes used for operation code, here read request
     sendBuffer[0] = 0;
     sendBuffer[1] = RRQ;
@@ -56,7 +38,7 @@ int main(int argc, char** argv) {
     sprintf(sendBuffer + 2,"%s",file);
     // reserved byte
     sendBuffer[2+strlen(file)] = 0;
-    // ascii mode
+    // set mode to octet
     sprintf(sendBuffer + 3 + strlen(file), "octet");
     // reserved byte
     sendBuffer[11 + strlen(file)] = 0;
@@ -74,7 +56,7 @@ int main(int argc, char** argv) {
     int nbOfSplits;
     char receiveBuffer[MAXSIZE] = {0};
     char ackBuffer[ACK_BUFF_SIZE] = {0};
-    ssize_t recBytes;
+    int recBytes;
 
     do {
         recBytes = recvfrom(sfd,receiveBuffer,MAXSIZE,0,res->ai_addr,&(res->ai_addrlen));
