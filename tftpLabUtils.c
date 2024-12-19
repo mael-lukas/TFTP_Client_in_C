@@ -1,14 +1,14 @@
 #include "tftpLabUtils.h"
 
 long getFileSize(char* fileName) {
-    FILE *file = fopen(fileName, "rb"); // open the file in binary mode
+    FILE *file = fopen(fileName, "rb"); // open file in binary mode
     if (file == NULL) {
         perror("Error opening file");
         return -1;
     }
 
-    fseek(file, 0, SEEK_END); // move file pointer to the end of the file
-    long size = ftell(file); // get the current position of the file pointer
+    fseek(file, 0, SEEK_END); // move file pointer to end of the file
+    long size = ftell(file); // get current position of file pointer
     fclose(file);
 
     return size;
@@ -16,7 +16,7 @@ long getFileSize(char* fileName) {
 
 char* fileToArray(char* fileName,int fileSize){
     char* content = malloc(fileSize);
-    FILE *file = fopen(fileName, "rb"); // open the file in binary mode
+    FILE *file = fopen(fileName, "rb"); // open file in binary mode
     if (file == NULL) {
         perror("Error opening file");
         return NULL;
