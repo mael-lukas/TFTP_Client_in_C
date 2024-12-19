@@ -72,11 +72,11 @@ int main(int argc, char** argv) {
 
 
     int nbOfSplits;
+    char receiveBuffer[MAXSIZE] = {0};
     char ackBuffer[ACK_BUFF_SIZE] = {0};
     ssize_t recBytes;
 
     do {
-        char receiveBuffer[MAXSIZE] = {0};
         recBytes = recvfrom(sfd,receiveBuffer,MAXSIZE,0,res->ai_addr,&(res->ai_addrlen));
         if (recBytes == -1) {
             printf("Error during reception\r\n");
@@ -101,7 +101,6 @@ int main(int argc, char** argv) {
                 exit(EXIT_FAILURE);
             }
             printf("Acknowledgement for split %d sent\r\n",nbOfSplits);
-            memset(receiveBuffer,0,sizeof(receiveBuffer));
         }
     } while (recBytes == MAXSIZE);
     return 0;

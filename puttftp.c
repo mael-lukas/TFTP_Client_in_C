@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     sprintf(sendBuffer + 3 + strlen(file), "octet");
     // reserved byte
     sendBuffer[11 + strlen(file)] = 0;
-    int sendBufferSize = 12 + strlen(file);
+    int sendBufferSize = 9 + strlen(file);
 
 
     ssize_t sentBytes = sendto(sfd,sendBuffer,sendBufferSize,0,res->ai_addr,res->ai_addrlen);
@@ -69,4 +69,34 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
     printf("Read request for %s sent\r\n",file);
+
+    // check for server acknowledgement of write request
+    char WRQAckBuffer[ACK_BUFF_SIZE] = {0};
+    ssize_t ackRecBytesWRQ = recvfrom(sfd,WRQAckBuffer,ACK_BUFF_SIZE,0,res->ai_addr,&(res->ai_addrlen));
+    if (ackRecBytesWRQ == -1) {
+        printf("Error while receiving acknowledgement of write request\r\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char dataToSend[1024] = {0};
+    char ackBuffer[ACK_BUFF_SIZE] = {0};
+    int sizeOfDataSent = MAXSIZE;
+    int sentDataNb;
+    int nbOfSplits;
+
+    do {
+        int sentDataNb = sendto(sfd,dataToSend,(sizeOfDataSent + 4),0,res->ai_addr,res->ai_addrlen);
+        if (sentDataNb == -1) {
+            printf("Error while sending data to server\r\n");
+            exit(EXIT_FAILURE);
+        }
+        int ackRecBytes = recvfrom(sfd,ackBuffer,ACK_BUFF_SIZE,0,res->ai_addr,&(res->ai_addrlen));
+        if (ackRecBytes == -1) {
+            printf("Error while receiving acknowledgement\r\n");
+            exit(EXIT_FAILURE);
+        }
+        if (ackBuffer[0] == 0 && ackBuffer[1] == ACK) {
+              nbOfSplits = (ackBuffer[2] << 8) | ackBuffer[3];
+        }
+    } while(sentDataNb == (MAXSIZE + 4));
 }
