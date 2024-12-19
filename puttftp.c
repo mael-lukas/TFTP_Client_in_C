@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
         printf("Error while sending request\r\n");
         exit(EXIT_FAILURE);
     }
-    printf("Read request for %s sent\r\n",file);
+    printf("Write request for %s sent\r\n",file);
 
     // check for server acknowledgement of write request
     char WRQAckBuffer[ACK_BUFF_SIZE] = {0};
