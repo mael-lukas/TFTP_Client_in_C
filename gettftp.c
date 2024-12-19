@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     sprintf(sendBuffer + 3 + strlen(file), "octet");
     // reserved byte
     sendBuffer[11 + strlen(file)] = 0;
-    int sendBufferSize = 12 + strlen(file);
+    int sendBufferSize = 9 + strlen(file);
 
 
     ssize_t sentBytes = sendto(sfd,sendBuffer,sendBufferSize,0,res->ai_addr,res->ai_addrlen);
