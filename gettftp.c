@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
                 printf("Error while sending acknowledgement\r\n");
                 exit(EXIT_FAILURE);
             }
-            printf("Acknowledgement for split %d sent\r\n",nbSplits);
+            printf("Acknowledgement for split %d sent\r\n",nbOfSplits);
         }
     } while (recBytes == MAXSIZE);
     return 0;
