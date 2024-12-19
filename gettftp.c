@@ -15,7 +15,8 @@
 #define DAT 3
 #define ACK 4
 #define ERR 5
-#define SERVER_PORT 1069
+#define SERVER_PORT "1069"
+#define ACK_BUFF_SIZE 4
 
 int main(int argc, char** argv) {
     // check number of arguments
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
     hints.ai_family = AF_INET;
     hints.ai_protocol = IPPROTO_UDP;
 
-    int status = getaddrinfo(host, NULL, &hints, &res);
+    int status = getaddrinfo(host, SERVER_PORT, &hints, &res);
     if (status == -1) {
         printf("Unable to reach host: %s\r\n",host);
         exit(EXIT_FAILURE);
@@ -46,7 +47,6 @@ int main(int argc, char** argv) {
     printf("created socket\r\n");
 
     char sendBuffer[MAXSIZE] = {0};
-    char receiveBuffer[MAXSIZE] = {0};
 
     // filling the send buffer
     // first two bytes used for operation code, here read request
@@ -57,18 +57,13 @@ int main(int argc, char** argv) {
     // reserved byte
     sendBuffer[2+strlen(file)] = 0;
     // ascii mode
-    sprintf(sendBuffer + 3 + strlen(file), "NETASCII");
+    sprintf(sendBuffer + 3 + strlen(file), "octet");
     // reserved byte
     sendBuffer[11 + strlen(file)] = 0;
     int sendBufferSize = 12 + strlen(file);
 
-    struct sockaddr_in serverAddr;
-    serverAddr.sin_family = res->ai_family;
-    serverAddr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET,host,&serverAddr.sin_addr.s_addr);
-    socklen_t serverAddrSize = sizeof(serverAddr);
 
-    ssize_t sentBytes = sendto(sfd,sendBuffer,sendBufferSize,0,&serverAddr,serverAddrSize);
+    ssize_t sentBytes = sendto(sfd,sendBuffer,sendBufferSize,0,res->ai_addr,res->ai_addrlen);
     if (sentBytes == -1) {
         printf("Error while sending request\r\n");
         exit(EXIT_FAILURE);
@@ -76,13 +71,13 @@ int main(int argc, char** argv) {
     printf("Read request for %s sent\r\n",file);
 
 
-    int nbSplits;
-    char ackBuffer[MAXSIZE] = {0};
-    int ackBuffSize = 4;
+    int nbOfSplits;
+    char ackBuffer[ACK_BUFF_SIZE] = {0};
     ssize_t recBytes;
 
     do {
-        recBytes = recvfrom(sfd,receiveBuffer,MAXSIZE,0,&serverAddr,&serverAddrSize);
+        char receiveBuffer[MAXSIZE] = {0};
+        recBytes = recvfrom(sfd,receiveBuffer,MAXSIZE,0,res->ai_addr,&(res->ai_addrlen));
         if (recBytes == -1) {
             printf("Error during reception\r\n");
             exit(EXIT_FAILURE);
@@ -90,7 +85,7 @@ int main(int argc, char** argv) {
         printf("Just received %d bytes\r\n",recBytes);
 
         if (receiveBuffer[0] == 0 && receiveBuffer[1] == ERR) {
-            printf("Error in received packet, in split %d \t code %d%d:\n%s\n",nbSplits,receiveBuffer[2],receiveBuffer[3],receiveBuffer + 4);
+            printf("Error in received packet, in split %d \t code %d%d:\n%s\n",nbOfSplits,receiveBuffer[2],receiveBuffer[3],receiveBuffer + 4);
             exit(EXIT_FAILURE);
         }
 
@@ -100,12 +95,13 @@ int main(int argc, char** argv) {
             ackBuffer[1] = ACK;
             ackBuffer[2] = receiveBuffer[2];
             ackBuffer[3] = receiveBuffer[3];
-            ssize_t sentBytes2 = sendto(sfd,ackBuffer,ackBuffSize,0,&serverAddr,serverAddrSize);
+            ssize_t sentBytes2 = sendto(sfd,ackBuffer,ACK_BUFF_SIZE,0,res->ai_addr,res->ai_addrlen);
             if (sentBytes2 == -1) {
                 printf("Error while sending acknowledgement\r\n");
                 exit(EXIT_FAILURE);
             }
             printf("Acknowledgement for split %d sent\r\n",nbOfSplits);
+            memset(receiveBuffer,0,sizeof(receiveBuffer));
         }
     } while (recBytes == MAXSIZE);
     return 0;
