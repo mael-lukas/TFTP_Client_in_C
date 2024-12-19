@@ -76,12 +76,12 @@ int main(int argc, char** argv) {
     printf("Read request for %s sent\r\n",file);
 
 
-    int nbSplits = 1;
+    int nbSplits;
     char ackBuffer[MAXSIZE] = {0};
     int ackBuffSize = 4;
-    ssize_t recBytes = MAXSIZE;
+    ssize_t recBytes;
 
-    while (recBytes == MAXSIZE) {
+    do {
         recBytes = recvfrom(sfd,receiveBuffer,MAXSIZE,0,&serverAddr,&serverAddrSize);
         if (recBytes == -1) {
             printf("Error during reception\r\n");
@@ -95,17 +95,18 @@ int main(int argc, char** argv) {
         }
 
         if (receiveBuffer[0] == 0 && receiveBuffer[1] == DAT) {
+            nbOfSplits = (receiveBuffer[2] << 8) | receiveBuffer[3];
             ackBuffer[0] = 0;
             ackBuffer[1] = ACK;
-            ackBuffer[2] = 0;
-            ackBuffer[3] = nbSplits;
-            nbSplits++;
+            ackBuffer[2] = receiveBuffer[2];
+            ackBuffer[3] = receiveBuffer[3];
             ssize_t sentBytes2 = sendto(sfd,ackBuffer,ackBuffSize,0,&serverAddr,serverAddrSize);
             if (sentBytes2 == -1) {
                 printf("Error while sending acknowledgement\r\n");
                 exit(EXIT_FAILURE);
             }
+            printf("Acknowledgement for split %d sent\r\n",nbSplits);
         }
-    }
+    } while (recBytes == MAXSIZE);
     return 0;
 }
