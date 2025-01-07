@@ -1,4 +1,4 @@
-# TP_TFTP_Henner_Lukas
+# TFTP Client in C language
 
 Pénélope HENNER: penelope.henner@ensea.fr  
 Maël LUKAS: mael.lukas@ensea.fr
